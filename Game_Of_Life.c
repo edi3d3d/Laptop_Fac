@@ -9,7 +9,7 @@
 // if its 0 the first part will be 0+' ' = ' '
 // if it 1 the first part will be 'O' - ' ' + ' ' = 'O'
 // now i can use int8 
-#define screen_multiplier 7                 //7 max????
+#define screen_multiplier 9                 //7 max????
 #define width  (208*screen_multiplier)      //208 max
 #define height (45*screen_multiplier)       //45 max
 void setup(char cells[][width])     //makes the whole cells table empty (all cells are dead)
@@ -82,10 +82,23 @@ void update_cells(char cells[][width], int *gen, int *total_cells, int time_star
             if(j+1<(width)) right=1;
             
 
-            nr_cells=
-            (cells[i-1][j-1]/'O')*(left*top)    + (cells[i-1][j+0]/'O')*(top)    + (cells[i-1][j+1]/'O')*(top*right)   +
-            (cells[i+0][j-1]/'O')*(left)        + 0                              + (cells[i+0][j+1]/'O')*(right)       +
-            (cells[i+1][j-1]/'O')*(left*bottom) + (cells[i+1][j+0]/'O')*(bottom) + (cells[i+1][j+1]/'O')*(bottom*right);
+            nr_cells=0;
+            if(left && top)
+                nr_cells+=(cells[i-1][j-1]/'O');
+            if(top)
+                nr_cells+=(cells[i-1][j+0]/'O');
+            if(top && right)
+                nr_cells+=(cells[i-1][j+1]/'O');
+            if(left)
+                nr_cells+=(cells[i+0][j-1]/'O');
+            if(right)
+                nr_cells+=(cells[i+0][j+1]/'O');
+            if(left && bottom)
+                nr_cells+=(cells[i+1][j-1]/'O');
+            if(bottom)
+                nr_cells+=(cells[i+1][j+0]/'O');
+            if(bottom && right)
+                nr_cells+=(cells[i+1][j+1]/'O');
             //if(nr_cells>0) printf("%d %d %d\n", i, j, nr_cells);
 
             if(nr_cells<2) cells_step[i][j]=' ';
@@ -112,7 +125,7 @@ void update_cells(char cells[][width], int *gen, int *total_cells, int time_star
 }
 void print_cells(char cells[][width], int gen, int total_cells, int current_time, int fps)
 {   
-    char printed_cells[600000]={};
+    char printed_cells[940000]={};
     int k=0;
     char top_left_corner=218;                 //print ┌
 
@@ -150,15 +163,14 @@ void print_cells(char cells[][width], int gen, int total_cells, int current_time
         printed_cells[k++]=lr_edge;
         for(int j=0; j<(width); j++)
         {
-            char aux=cells[i][j];
-            printed_cells[k++]=aux;
+            //char aux=cells[i][j];
+            printed_cells[k++]=cells[i][j];
             
         }
         
         //printf("%c\n", 179);          //print │
         printed_cells[k++]=lr_edge;
         printed_cells[k++]=line_terminator;
-        
     }
     
     //printf("%c", 192);              //print └
@@ -199,8 +211,7 @@ int main(void)
     //line
     
     for(int i=5; i<=width-5; i++)
-        cells[15][i]='O',
-        cells[150][i]='O';
+        cells[(height/2)][i]='O';
 
         
     
