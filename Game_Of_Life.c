@@ -9,18 +9,12 @@
 // if its 0 the first part will be 0+' ' = ' '
 // if it 1 the first part will be 'O' - ' ' + ' ' = 'O'
 // now i can use int8 
-#define screen_multiplier 9                 //7 max????
-#define width  (208*screen_multiplier)      //208 max
-#define height (45*screen_multiplier)       //45 max
-void setup(char cells[][width])     //makes the whole cells table empty (all cells are dead)
-{
-    for(int i=0; i<height; i++)
-        for(int j=0; j<width; j++)
-            cells[i][j]=' ';
-}
+#define screen_multiplier 7                  //7     multiplier for bigger/smaller dimensions
+#define width  (208*screen_multiplier)       //208   width/lenght
+#define height (75*screen_multiplier)        //75    height
+#define steps 10                              //nr of steps to do each simulation before displaying it 
 void get_input(char cells[][width], int *total_cells, int *fps)       //receives input from the keyboard for adding cells, changing fps, it also pauses and stops the simulation
 {
-    //for(int i=0; i<100; i++)        // 100 loops so the user has time to type a character
     cells[0][0] = ' ';
     *total_cells += 0;
     int key = 0, pause = 0;
@@ -36,7 +30,6 @@ void get_input(char cells[][width], int *total_cells, int *fps)       //receives
                 if (key == 'q') exit(0);
                 else if (key == ' ')
                 {
-                    
                     if (step == 1)
                         step = 0;
                     else
@@ -55,13 +48,12 @@ void get_input(char cells[][width], int *total_cells, int *fps)       //receives
                     scanf("%d", fps);
                     while (*fps < 0)
                     {
-                        printf("\nDont put a negative number or 0 as input, try again. fps=");
+                        printf("\nDont put a negative or 0 as a number, try again and try not to break this please. fps=");
                         scanf("%d", fps);
                     }
                     
                     key = 0;
                 }
-                //else if (key == 'e') //edit mode
             }
         }
     } while ((key==' ' && pause == 1) || step == 1 || *fps==0);
@@ -85,27 +77,32 @@ void update_cells(char cells[][width], int *gen, int *total_cells, int time_star
             nr_cells=0;
             if(left && top)
                 nr_cells+=(cells[i-1][j-1]/'O');
+
             if(top)
                 nr_cells+=(cells[i-1][j+0]/'O');
+
             if(top && right)
                 nr_cells+=(cells[i-1][j+1]/'O');
+
             if(left)
                 nr_cells+=(cells[i+0][j-1]/'O');
+
             if(right)
                 nr_cells+=(cells[i+0][j+1]/'O');
+
             if(left && bottom)
                 nr_cells+=(cells[i+1][j-1]/'O');
+
             if(bottom)
                 nr_cells+=(cells[i+1][j+0]/'O');
+
             if(bottom && right)
                 nr_cells+=(cells[i+1][j+1]/'O');
-            //if(nr_cells>0) printf("%d %d %d\n", i, j, nr_cells);
 
             if(nr_cells<2) cells_step[i][j]=' ';
             else if(nr_cells==2) cells_step[i][j]=cells[i][j];
             else if(nr_cells==3) cells_step[i][j]='O';
             else if(nr_cells>=4) cells_step[i][j]=' ';
-            
         }
     
     for(int i=0; i<height; i++)
@@ -115,73 +112,55 @@ void update_cells(char cells[][width], int *gen, int *total_cells, int time_star
             if(cells[i][j]=='O') *total_cells=*total_cells+1;
         }
 
-
     *gen+=1;
-    *current_time=clock()-time_start;
     stop=clock();
+    *current_time=stop-time_start;
+    
     int sleep_time;
     if(*fps!=0) sleep_time = 1000 / (*fps) - (stop - start);
     if (sleep_time > 0 && *fps!=0) Sleep(sleep_time);              //sleep for some time so the fps is more fluid and it doesnt run to quickly in the beginning
 }
 void print_cells(char cells[][width], int gen, int total_cells, int current_time, int fps)
-{   
-    char printed_cells[940000]={};
+{
+    char printed_cells[((width+2)*(height+3))]={};
     int k=0;
     char top_left_corner=218;                 //print ┌
-
     char top_right_corner=191;                //print ┐
-
     char bottom_left_corner=192;              //print └
-
     char bottom_right_corner=217;             //print ┘
-
     char lr_edge=179;                         //print │
-    
     char line_terminator='\n';                //new line
-
     char tb_edge=196;                         //print ─
 
 
-    
-    
-    //rewrite this into a string to print it faster
-    //printf("%c", 218);              //print ┌
-    printed_cells[k++]=top_left_corner;
+    printed_cells[k++]=top_left_corner;       //print ┌
 
-    
     for(int i=0; i<width; i++)      
-        //rintf("%c", 196);          //print ─
-        printed_cells[k++]=tb_edge;
-    //printf("%c\n", 191);              //print ┐
-    printed_cells[k++]=top_right_corner;
+        printed_cells[k++]=tb_edge;           //print ─
+
+    printed_cells[k++]=top_right_corner;      //print ┐
     printed_cells[k++]=line_terminator;
     
+
     for(int i=0; i<(height); i++)
     {
-        
-        //printf("%c", 179);          //print │
-        printed_cells[k++]=lr_edge;
+        printed_cells[k++]=lr_edge;           //print │
+
         for(int j=0; j<(width); j++)
-        {
-            //char aux=cells[i][j];
             printed_cells[k++]=cells[i][j];
-            
-        }
         
-        //printf("%c\n", 179);          //print │
-        printed_cells[k++]=lr_edge;
+            
+        printed_cells[k++]=lr_edge;           //print │
         printed_cells[k++]=line_terminator;
     }
     
-    //printf("%c", 192);              //print └
-    printed_cells[k++]=bottom_left_corner;
+    printed_cells[k++]=bottom_left_corner;    //print └
     
     for(int i=0; i<width; i++)      
-        //printf("%c", 196);          //print ─
-        printed_cells[k++]=tb_edge;
-        
-    //printf("%c\n", 217);              //print ┘
-    printed_cells[k++]=bottom_right_corner;
+        printed_cells[k++]=tb_edge;           //print ─
+    
+
+    printed_cells[k++]=bottom_right_corner;   //print ┘
     printed_cells[k++]='\0';
     system("cls");
 
@@ -195,19 +174,20 @@ int main(void)
     const clock_t time_start=clock();
     
     char cells[height][width];
-    int gen=0, total_cells=0, fps=1, current_time=0;
+    int gen=0, total_cells=0, fps=0, current_time=0;
 
-    setup(cells);
+    for(int i=0; i<height; i++)
+        for(int j=0; j<width; j++)      //makes all the cells empty (' ')
+            cells[i][j]=' ';
     
     //flyer
     
     cells[10][60]='O';
     cells[10][61]='O';
     cells[10][62]='O';
-    cells[11][62]='O';
-    cells[12][61]='O';
+    cells[9][62]='O';
+    cells[8][61]='O';
     
-
     //line
     
     for(int i=5; i<=width-5; i++)
@@ -221,7 +201,7 @@ int main(void)
     while(1)    //infinite loop, it stops when the q key is hit
     {
         get_input(cells, &total_cells, &fps);
-        update_cells(cells, &gen, &total_cells, time_start, &current_time, &fps);
+        for(int i=1;i<=steps;i++) update_cells(cells, &gen, &total_cells, time_start, &current_time, &fps);
         print_cells(cells, gen, total_cells, current_time, fps);
     }
     return 0;
