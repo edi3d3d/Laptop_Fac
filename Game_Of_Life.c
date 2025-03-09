@@ -9,10 +9,9 @@
 // if its 0 the first part will be 0+' ' = ' '
 // if it 1 the first part will be 'O' - ' ' + ' ' = 'O'
 // now i can use int8 
-#define screen_multiplier 7                  //7     multiplier for bigger/smaller dimensions
-#define width  (208*screen_multiplier)       //208   width/lenght
-#define height (75*screen_multiplier)        //75    height
-#define steps 10                              //nr of steps to do each simulation before displaying it 
+#define width  (800)        //800
+#define height (500)        //500
+#define steps 1             //nr of steps to do each simulation before displaying it 
 void get_input(char cells[][width], int *total_cells, int *fps)       //receives input from the keyboard for adding cells, changing fps, it also pauses and stops the simulation
 {
     cells[0][0] = ' ';
@@ -62,57 +61,63 @@ void update_cells(char cells[][width], int *gen, int *total_cells, int time_star
 {
     *total_cells=0;
     clock_t start=clock(), stop;
-    char cells_step[height][width];
-    for(int i=0; i<(height); i++)
-        for(int j=0; j<(width); j++)
-        {
-            int nr_cells;
-            int left=0, right=0, top=0, bottom=0;
-            if(i-1>=0) top=1;
-            if(j-1>=0) left=1;
-            if(i+1<(height)) bottom=1;
-            if(j+1<(width)) right=1;
-            
+    for(int i=1;i<=steps;i++) 
+    {
+        char cells_step[height][width];
+        for(int i=0; i<(height); i++)
+            for(int j=0; j<(width); j++)
+            {
+                int nr_cells;
+                int left=0, right=0, top=0, bottom=0;
+                if(i-1>=0) top=1;
+                if(j-1>=0) left=1;
+                if(i+1<(height)) bottom=1;
+                if(j+1<(width)) right=1;
+                
 
-            nr_cells=0;
-            if(left && top)
-                nr_cells+=(cells[i-1][j-1]/'O');
+                nr_cells=0;
+                
+                if(left && top)
+                    nr_cells+=(cells[i-1][j-1]/'O');
+                
+                if(top)
+                    nr_cells+=(cells[i-1][j+0]/'O');
 
-            if(top)
-                nr_cells+=(cells[i-1][j+0]/'O');
+                if(top && right)
+                    nr_cells+=(cells[i-1][j+1]/'O');
 
-            if(top && right)
-                nr_cells+=(cells[i-1][j+1]/'O');
+                if(left)
+                    nr_cells+=(cells[i+0][j-1]/'O');
 
-            if(left)
-                nr_cells+=(cells[i+0][j-1]/'O');
+                if(right)
+                    nr_cells+=(cells[i+0][j+1]/'O');
 
-            if(right)
-                nr_cells+=(cells[i+0][j+1]/'O');
+                if(left && bottom)
+                    nr_cells+=(cells[i+1][j-1]/'O');
 
-            if(left && bottom)
-                nr_cells+=(cells[i+1][j-1]/'O');
+                if(bottom)
+                    nr_cells+=(cells[i+1][j+0]/'O');
 
-            if(bottom)
-                nr_cells+=(cells[i+1][j+0]/'O');
+                if(bottom && right)
+                    nr_cells+=(cells[i+1][j+1]/'O');
 
-            if(bottom && right)
-                nr_cells+=(cells[i+1][j+1]/'O');
+                if(nr_cells<2) cells_step[i][j]=' ';
+                
 
-            if(nr_cells<2) cells_step[i][j]=' ';
-            else if(nr_cells==2) cells_step[i][j]=cells[i][j];
-            else if(nr_cells==3) cells_step[i][j]='O';
-            else if(nr_cells>=4) cells_step[i][j]=' ';
-        }
-    
-    for(int i=0; i<height; i++)
-        for(int j=0; j<width; j++)
-        {
-            cells[i][j]=cells_step[i][j];
-            if(cells[i][j]=='O') *total_cells=*total_cells+1;
-        }
+                else if(nr_cells==2) cells_step[i][j]=cells[i][j];
+                else if(nr_cells==3) cells_step[i][j]='O';
+                else if(nr_cells>3) cells_step[i][j]=' ';
+            }
+        
+        for(int i=0; i<height; i++)
+            for(int j=0; j<width; j++)
+            {
+                cells[i][j]=cells_step[i][j];
+                if(cells[i][j]=='O') *total_cells=*total_cells+1;
+            }
 
-    *gen+=1;
+        *gen+=1;
+    }
     stop=clock();
     *current_time=stop-time_start;
     
@@ -162,7 +167,8 @@ void print_cells(char cells[][width], int gen, int total_cells, int current_time
 
     printed_cells[k++]=bottom_right_corner;   //print ┘
     printed_cells[k++]='\0';
-    system("cls");
+    COORD coord = { 0 , 0};
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 
     puts(printed_cells);
     
@@ -201,7 +207,7 @@ int main(void)
     while(1)    //infinite loop, it stops when the q key is hit
     {
         get_input(cells, &total_cells, &fps);
-        for(int i=1;i<=steps;i++) update_cells(cells, &gen, &total_cells, time_start, &current_time, &fps);
+        update_cells(cells, &gen, &total_cells, time_start, &current_time, &fps);
         print_cells(cells, gen, total_cells, current_time, fps);
     }
     return 0;
