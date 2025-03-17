@@ -16,14 +16,21 @@ typedef struct binary_tree{
 
 void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *tree_start, int *task, char ***board)
 {
-    fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);
+    fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);    //read data from file
     fgetc(data_file);
+
+    (*board) = (char**) malloc ((*size_l) * sizeof(char*));             //initiate the board with 0
+    for(int i=0;i<(*size_c); i++)                                       //the same board will be used by each generation
+    {                                                                   //it will be used as the board to calculate the respective rule
+        (*board)[i]= (char*) malloc((*size_c));                         //based on the position in the B. tree
+        for(int j=0; j<(*size_c); j++)
+            (*board)[i][j]=0;
+    }
     
-    (*tree_start).cell= (coord*) malloc(sizeof(coord));
+    if((*task)==3) (*tree_start).passes=1;                          //if its the 3rd task, a binary tree will be generated because the path will be left
+    else (*tree_start).passes=0;                                    //the algorithm will take the left path then the right one, so if it starts with the right one
+    (*tree_start).cell= (coord*) malloc(sizeof(coord));             //it will be a 1 way linked list (no father/previous pointer)
     (*tree_start).depth=0;
-    int task_start=0;
-    if((*task)==3) task_start=1;
-    (*tree_start).passes=task_start;                                            //change the 0 to a 1 for task 2 so it takes the Right most direction at the start
     (*tree_start).son[0]=NULL;
     (*tree_start).son[1]=NULL;
     char board_value;
@@ -32,16 +39,13 @@ void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *t
     {
         for(int j=0; j<(*size_c); j++)
         {
-            fscanf(data_file, "%c", &board_value);
-            
-             
-            if(board_value=='X') 
+            fscanf(data_file, "%c", &board_value);                  //record the values of X and add the coordonates in the 
+            if(board_value=='X')                                    //cell array of each node of the tree/list
             {
                 (*tree_start).cell[k].l=i;
                 (*tree_start).cell[k].c=j;
                 k++;
                 (*tree_start).cell= (coord*) realloc((*tree_start).cell,sizeof(coord) * (k+1));
-                //printf("%d %d\n", i, j);
             } 
         }
         fgetc(data_file);
@@ -51,11 +55,94 @@ void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *t
 
     for(int i=0; (*tree_start).cell[i].c!=-1; i++)
     {
-        board
-            [(*tree_start).cell[i].l]
-            [(*tree_start).cell[i].c]
-            =0b00010000;       //bit 4 is the cell state, bite 5-8 tell the number of neighbours
-        //printf("%d %d\n", (*tree_start).cell[i].l, (*tree_start).cell[i].c);
+        (*board)
+            [(*tree_start).cell[i].l]                       //each coordonate gets added to the array as 0b00010000 or 16.
+            [(*tree_start).cell[i].c]                       //it gets added on the same coordonates in the matrix as the array coordonates
+            =0b00010000;                                    //bit 4 is the cell state, bite 5-8 tell the number of neighbours  
+    }
+
+    for(int i=0;i<(*size_l); i++)
+    {
+        for(int j=0; j<(*size_c); j++)
+        {
+                int top=0, left=0, bottom=0, right=0, nr_neighbours=0;
+                if(i-1>=0) top=1;
+                if(j-1>=0) left=1;                                          //top/left/bottom/right
+                if(i+1<(*size_l)) bottom=1;                                    //this checks if the position is on the edge of the board
+                if(j+1<(*size_c)) right=1;                                     // 0 ->     on the edge
+                                                                            // 1 -> not on the edge
+            if(left && top)
+                nr_neighbours+=((*board)[i-1][j-1]>>4);                     //if its within bounds and adds the 4th bit value to the sum
+                                                                            //the forth bit represents if a cell is alive or not
+            if(top)                                                         //bits 5-8 represend the nr of neighbours
+                nr_neighbours+=((*board)[i-1][j+0]>>4);
+
+            if(top && right)
+                nr_neighbours+=((*board)[i-1][j+1]>>4);
+
+            if(left)
+                nr_neighbours+=((*board)[i+0][j-1]>>4);
+
+            if(right)
+                nr_neighbours+=((*board)[i+0][j+1]>>4);
+
+            if(left && bottom)
+                nr_neighbours+=((*board)[i+1][j-1]>>4);
+
+            if(bottom)
+                nr_neighbours+=((*board)[i+1][j+0]>>4);
+
+            if(bottom && right)
+                nr_neighbours+=((*board)[i+1][j+1]>>4);
+            
+            (*board)[i][j]+=nr_neighbours;                            //the sum gets added to the cell
+        }                                                             //it cannot be bigger then 8 so it uses 4 out of the value's 8 bits
+    }
+}
+void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, char **board)
+{
+    if((task==1 && (*tree_node).depth!=0) || task==3)
+    {
+        for(int i=0; i<size_l; i++)
+        {
+            for(int j=0; j<size_c; j++)
+                printf("%c ", (board[i][j] >> 4) * ('X' - '+')+'+');
+            printf("\n");
+        }
+        printf("\n");
+    }
+    else if(task==2)
+    {
+        printf("%d ", (*tree_node).depth);
+        for(int i=0; (*tree_node).cell[i].c != -1; i++)
+            printf("%d %d ", (*tree_node).cell[i].l, (*tree_node).cell[i].c);
+        printf("\n");
+    }
+    else if(task==4)
+    {
+        exit(1); //hamiltonian, idk
+    }
+}
+void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_node, int task, char **board)
+{
+    afis(data_file, size_l, size_c, tree_node, task, board);
+
+    int test=0;
+    if((*tree_node).depth>=nr_iteratii || (*tree_node).passes==2 || test==1)
+    {
+        free((*tree_node).cell);
+        free(tree_node);
+        return ;
+    }
+    else
+    {
+        //new node
+
+        //update new node
+
+        //call funtion left
+        //call function right
+                
     }
 }
 /*
@@ -67,53 +154,6 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
                                                 //direction=1 RIGHT
     
     
-            
-    for(int i=0; (*tree_start).cell[i].c!=-1; i++)
-    {
-        board
-            [(*tree_start).cell[i].l]
-            [(*tree_start).cell[i].c]
-            =0b00010000;       //bit 4 is the cell state, bite 5-8 tell the number of neighbours
-        //printf("%d %d\n", (*tree_start).cell[i].l, (*tree_start).cell[i].c);
-    }
-    
-    for(int i=0;i<size_l; i++)
-    {
-        for(int j=0; j<size_c; j++)
-        {
-                int top=0, left=0, bottom=0, right=0, nr_neighbours=0;
-                if(i-1>=0) top=1;
-                if(j-1>=0) left=1;
-                if(i+1<size_l) bottom=1;
-                if(j+1<size_c) right=1;
-
-            if(left && top)
-                nr_neighbours+=(board[i-1][j-1]>>4);
-                
-            if(top)
-                nr_neighbours+=(board[i-1][j+0]>>4);
-
-            if(top && right)
-                nr_neighbours+=(board[i-1][j+1]>>4);
-
-            if(left)
-                nr_neighbours+=(board[i+0][j-1]>>4);
-
-            if(right)
-                nr_neighbours+=(board[i+0][j+1]>>4);
-
-            if(left && bottom)
-                nr_neighbours+=(board[i+1][j-1]>>4);
-
-            if(bottom)
-                nr_neighbours+=(board[i+1][j+0]>>4);
-
-            if(bottom && right)
-                nr_neighbours+=(board[i+1][j+1]>>4);
-            
-            board[i][j]+=nr_neighbours;
-        }
-    }
     int aux=0;
     //printf("nod   dir   nod\n");    //nod_start, direction, new_node;   0 left, 1 right
     while(origin_passes <3)        
@@ -148,18 +188,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
         //printf("%d \n", (*tree_current).depth);
         
         
-         for(int i=0; i<size_l; i++)
-        {
-            for(int j=0; j<size_c; j++)
-                printf("%d ", (board[i][j] & 0b00001111));
-            
-            printf("    ");
-
-            for(int j=0; j<size_c; j++)
-                printf("%d ", ((board[i][j] & 0b00010000) >> 4));
-
-            printf("\n");
-        } 
+         
 
         int k=0;
 
@@ -268,16 +297,16 @@ int main()
         return 1;
     }
 
-    bTree tree_start;
+    bTree *tree_start=(bTree*) malloc(sizeof(bTree));
 
     int task, size_l, size_c, nr_iteratii;
     char **board;
 
-    setup(data_file, &size_l, &size_c, &nr_iteratii, &tree_start, &task, &board);
+    setup(data_file, &size_l, &size_c, &nr_iteratii, tree_start, &task, &board);
 
     
 
-    task_cells(data_file, size_l, size_c, nr_iteratii, &tree_start, task, board);
+    task_cells(data_file, size_l, size_c, nr_iteratii, tree_start, task, board);
     
     fclose(data_file);
     return 0;
