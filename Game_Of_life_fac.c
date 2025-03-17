@@ -94,9 +94,9 @@ void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *t
         }                                                             //it cannot be bigger then 8 so it uses 4 out of the value's 8 bits
     }
 }
-void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, char **board)
+void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, char **board, int depth)
 {
-    if((task==1 && (*tree_node).depth!=0) || task==3)
+    if((task==1 && depth!=0) || task==3)
     {
         for(int i=0; i<size_l; i++)
         {
@@ -108,7 +108,7 @@ void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, c
     }
     else if(task==2)
     {
-        printf("%d ", (*tree_node).depth);
+        printf("%d ", depth);
         for(int i=0; (*tree_node).cell[i].c != -1; i++)
             printf("%d %d ", (*tree_node).cell[i].l, (*tree_node).cell[i].c);
         printf("\n");
@@ -120,7 +120,7 @@ void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, c
 }
 void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_node, int task, char **board, int depth)
 {
-    afis(data_file, size_l, size_c, tree_node, task, board);
+    afis(data_file, size_l, size_c, tree_node, task, board, depth);
 
     int test=0;
     if(task==3)
