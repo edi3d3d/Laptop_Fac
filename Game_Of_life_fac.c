@@ -11,18 +11,19 @@ typedef struct binary_tree{
     int depth;
     int passes;
     coord *cell;
-    struct binary_tree *father;
     struct binary_tree *(son[2]);
 }bTree;
-void read_from_file(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *tree_start)
+
+void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *tree_start, int *task, char ***board)
 {
-    fscanf(data_file,"%d%d%d", size_l, size_c, nr_iteratii);
+    fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);
     fgetc(data_file);
     
     (*tree_start).cell= (coord*) malloc(sizeof(coord));
     (*tree_start).depth=0;
-    (*tree_start).passes=1;                                            //change the 0 to a 1 for task 2 so it takes the Right most direction at the start
-    (*tree_start).father=NULL;
+    int task_start=0;
+    if((*task)==3) task_start=1;
+    (*tree_start).passes=task_start;                                            //change the 0 to a 1 for task 2 so it takes the Right most direction at the start
     (*tree_start).son[0]=NULL;
     (*tree_start).son[1]=NULL;
     char board_value;
@@ -47,23 +48,24 @@ void read_from_file(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii,
     }
     (*tree_start).cell[k].l=-1;
     (*tree_start).cell[k].c=-1;
+
+    for(int i=0; (*tree_start).cell[i].c!=-1; i++)
+    {
+        board
+            [(*tree_start).cell[i].l]
+            [(*tree_start).cell[i].c]
+            =0b00010000;       //bit 4 is the cell state, bite 5-8 tell the number of neighbours
+        //printf("%d %d\n", (*tree_start).cell[i].l, (*tree_start).cell[i].c);
+    }
 }
-void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_start)
+/*
+void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_start, int task)
 {
     bTree *tree_current=tree_start;
-    char **board= (char**) malloc (size_l * sizeof(char*));
+    
     int origin_passes=0, direction=1;           //direction=0 LEFT              //make this 1 for task 2
                                                 //direction=1 RIGHT
-    for(int i=0;i<size_c; i++)
-    {
-        board[i]= (char*) malloc(size_c);
-    }
-
-    for(int i=0; i<size_c; i++)
-    {
-        for(int j=0; j<size_c; j++)
-            board[i][j]=0;
-    }
+    
     
             
     for(int i=0; (*tree_start).cell[i].c!=-1; i++)
@@ -114,7 +116,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
     }
     int aux=0;
     //printf("nod   dir   nod\n");    //nod_start, direction, new_node;   0 left, 1 right
-    while(origin_passes<3)        
+    while(origin_passes <3)        
     {                                                                               //nr of pases <2 do in the node or terminal node, else leave
         int add=0;
         aux++;
@@ -126,7 +128,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
         {
             direction=(*tree_current).passes;
             //printf("%d     ", direction);
-            (*tree_current).son[direction] = (bTree*) malloc(sizeof(bTree));
+            (*tree_current).son[direction] = (bTree*) malloc(sizeof(bTree));    
             ((*tree_current).passes)+=1;                                            
             (*((*tree_current).son[direction])).father=tree_current;                //tree branch swapping, dont change, it took 2 hours for me to implement this logic 
             tree_current=(*tree_current).son[direction];                            
@@ -146,7 +148,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
         //printf("%d \n", (*tree_current).depth);
         
         
-        /* for(int i=0; i<size_l; i++)
+         for(int i=0; i<size_l; i++)
         {
             for(int j=0; j<size_c; j++)
                 printf("%d ", (board[i][j] & 0b00001111));
@@ -157,7 +159,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
                 printf("%d ", ((board[i][j] & 0b00010000) >> 4));
 
             printf("\n");
-        } */
+        } 
 
         int k=0;
 
@@ -174,11 +176,11 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
                     if(j+1<size_c) right=1;
 
 
-                    /* if(last_direction==0)
+                     if(last_direction==0)
                     {
 
                     }
-                    else  */
+                    else  
                     if(last_direction==1)
                     {
                         if( (board[i][j] & 0b00010000) >> 4 == 1 && ( (board[i][j] & 0b00001111) < 2 ||  (board[i][j] & 0b00001111) > 3) )    //daca are 0,1,4,5,6,7,8 vecini si celula este vie, atunci ea moare
@@ -242,13 +244,13 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
         //for(int i=0; i<k; i++)
         //    printf("%d %d\n", (*tree_current).cell[i].l, (*tree_current).cell[i].c);
         
-        /* for(int i=0; i<size_l; i++)
+         for(int i=0; i<size_l; i++)
         {
             for(int j=0; j<size_c; j++)
             {
                 printf(board[i][j]>>4*('X' - '+')+'+');
             }
-        } */
+        } 
 
     }
     
@@ -256,6 +258,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
         free(board[i]);
     free(board);
 }
+*/
 int main()
 {
     FILE *data_file=fopen(file_name,"r");
@@ -267,15 +270,14 @@ int main()
 
     bTree tree_start;
 
-    int nr_tot_task;
-    fscanf(data_file, "%d", &nr_tot_task);
+    int task, size_l, size_c, nr_iteratii;
+    char **board;
 
-    for(int i = 0; i < nr_tot_task; i ++){
+    setup(data_file, &size_l, &size_c, &nr_iteratii, &tree_start, &task, &board);
 
-        int size_l, size_c, nr_iteratii;
-        read_from_file(data_file, &size_l, &size_c, &nr_iteratii, &tree_start);
-        task_cells(data_file, size_l, size_c, nr_iteratii, &tree_start);
-    }
+    
+
+    task_cells(data_file, size_l, size_c, nr_iteratii, &tree_start, task, board);
     
     fclose(data_file);
     return 0;
