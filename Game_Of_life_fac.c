@@ -22,10 +22,7 @@ void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *t
             (*board)[i][j]=0;
     }
     
-    if((*task)==3) (*tree_start).passes=1;                          //if its the 3rd task, a binary tree will be generated because the path will be left
-    else (*tree_start).passes=0;                                    //the algorithm will take the left path then the right one, so if it starts with the right one
-    (*tree_start).cell= (coord*) malloc(sizeof(coord));             //it will be a 1 way linked list (no father/previous pointer)
-    (*tree_start).depth=0;
+    (*tree_start).cell= (coord*) malloc(sizeof(coord));
     (*tree_start).son[0]=NULL;
     (*tree_start).son[1]=NULL;
     char board_value;
