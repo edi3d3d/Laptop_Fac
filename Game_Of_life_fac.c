@@ -112,7 +112,7 @@ void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, c
     }
     else if(task==4)
     {
-        exit(1); //hamiltonian, idk
+        exit(0); //hamiltonian, idk
     }
 }
 void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_node, int task, char **board, int depth)
