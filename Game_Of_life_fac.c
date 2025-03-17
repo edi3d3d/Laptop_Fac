@@ -134,7 +134,7 @@ void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree 
     (*(*tree_node).son[0]).cell=NULL;
     if(depth < nr_iteratii) task_cells(data_file, size_l, size_c, nr_iteratii, (*tree_node).son[0], task, board, depth+1);        
 
-
+    //rework this shii
     //new node
     //update new node
     //call funtion left
