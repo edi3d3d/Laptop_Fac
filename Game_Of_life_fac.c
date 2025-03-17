@@ -1,19 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define file_name "D:\\vsc\\Game_Of_Life_Tasks_File.txt"         //introduceti adresa si numele fisierului (exemplu): "D:\\vsc\\Game_Of_Life_Tasks_File.txt"
-
 typedef struct coord{
     int l;
     int c;
 } coord;
-
 typedef struct binary_tree{
-    int depth;
-    int passes;
     coord *cell;
     struct binary_tree *(son[2]);
 }bTree;
-
 void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *tree_start, int *task, char ***board)
 {
     fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);    //read data from file
@@ -123,27 +118,28 @@ void afis(FILE* data_file, int size_l, int size_c, bTree *tree_node, int task, c
         exit(1); //hamiltonian, idk
     }
 }
-void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_node, int task, char **board)
+void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_node, int task, char **board, int depth)
 {
     afis(data_file, size_l, size_c, tree_node, task, board);
 
     int test=0;
-    if((*tree_node).depth>=nr_iteratii || (*tree_node).passes==2 || test==1)
+    if(task==3)
     {
-        free((*tree_node).cell);
-        free(tree_node);
-        return ;
+        (*tree_node).son[1]= (bTree*) malloc(sizeof(bTree));
+        (*(*tree_node).son[1]).cell=NULL;
+        if(depth < nr_iteratii) task_cells(data_file, size_l, size_c, nr_iteratii, (*tree_node).son[1], task, board, depth+1);
     }
-    else
-    {
-        //new node
+    
+    (*tree_node).son[1]= (bTree*) malloc(sizeof(bTree));
+    (*(*tree_node).son[0]).cell=NULL;
+    if(depth < nr_iteratii) task_cells(data_file, size_l, size_c, nr_iteratii, (*tree_node).son[0], task, board, depth+1);        
 
-        //update new node
 
-        //call funtion left
-        //call function right
-                
-    }
+    //new node
+    //update new node
+    //call funtion left
+    //call function right
+
 }
 /*
 void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_start, int task)
@@ -299,14 +295,12 @@ int main()
 
     bTree *tree_start=(bTree*) malloc(sizeof(bTree));
 
-    int task, size_l, size_c, nr_iteratii;
+    int task, size_l, size_c, nr_iteratii, depth=0;
     char **board;
 
     setup(data_file, &size_l, &size_c, &nr_iteratii, tree_start, &task, &board);
 
-    
-
-    task_cells(data_file, size_l, size_c, nr_iteratii, tree_start, task, board);
+    task_cells(data_file, size_l, size_c, nr_iteratii, tree_start, task, board, depth);
     
     fclose(data_file);
     return 0;
