@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <windows.h>
+#include <time.h>
 #define file_input_name "D:\\vsc\\Game_Of_Life_Tasks_File.txt"         //input file adress: "D:\\vsc\\Game_Of_Life_Tasks_File.txt"
 #define file_output_name "D:\\vsc\\Game_Of_Life_Output_File.txt"       //output file adress "D:\\vsc\\Game_Of_Life_Output_File.txt"
 
@@ -38,7 +40,7 @@ void add_in_list(int l, int c, stack *node)
     node->cell[node->nr_cell].c = c;
     
     (node->nr_cell)++;
-    printf("X");
+    //printf("X");
 }
 
 /**
@@ -116,9 +118,9 @@ int neighbour_count(int l, int c, int size_l, int size_c, stack *node_start, int
  * if the task if 3 it prints the current board for each node, similar to task 1
  * /if the task if 4 it doesn't anything yet, the deadline is far away :)
  */
-void printf_cells(FILE* output_file, int size_l, int size_c, stack *node_start, int task, int generation)
+void printf_cells(FILE* output_file, int size_l, int size_c, stack *node_start, stack *node, int task, int generation)
 {
-    if(task == 1 || task == 3){
+    if((task == 1 && generation > 0) || task == 3){
         for(int i = 0; i < size_l; i++){
             for(int j = 0; j < size_c; j++){
                 if(is_alive(i, j, node_start, generation)) {
@@ -133,8 +135,8 @@ void printf_cells(FILE* output_file, int size_l, int size_c, stack *node_start, 
     }else if (task == 2){
         fprintf(output_file, "%d ", generation);
 
-        for(int i = 0; i < node_start->nr_cell; i++)
-            fprintf(output_file, "%d %d ", node_start->cell[i].l, node_start->cell[i].c);
+        for(int i = 0; i < node->nr_cell; i++)
+            fprintf(output_file, "%d %d ", node->cell[i].l, node->cell[i].c);
 
         fprintf(output_file, "\n");
     }
@@ -201,7 +203,7 @@ void update_cells(int size_l, int size_c, stack *node_start, stack *node, stack 
             if(in_list(nl, nc, next_node) == 1)
                 continue;
 
-            printf("%d %d %d %d ", nl, nc, n_count, i_alive);
+            //printf("%d %d %d %d ", nl, nc, n_count, i_alive);
 
             if(direction == 0) {
                 if(n_count == 2 && i_alive == 0)
@@ -214,7 +216,7 @@ void update_cells(int size_l, int size_c, stack *node_start, stack *node, stack 
                     add_in_list(nl, nc, next_node);
                 }
             }
-            printf("\n");
+            //printf("\n");
         }
     }
 }
@@ -224,33 +226,28 @@ void update_cells(int size_l, int size_c, stack *node_start, stack *node, stack 
  */
 void task_cells(FILE* output_file, int size_l, int size_c, int nr_iteratii, stack *node_start, stack *node, int task, int generation)
 {
-    printf_cells(output_file, size_l, size_c, node_start, task, generation);
+    printf_cells(output_file, size_l, size_c, node_start, node, task, generation);
     
     if(generation == nr_iteratii)
         return ;
 
-    
-    node->next = (stack*) malloc(sizeof(stack));
-    update_cells(size_l, size_c, node_start, node, node->next, generation, 0);
-    task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node->next, task, generation+1);
-    free(node->next);
-
+    if(task == 3){
+        node->next = (stack*) malloc(sizeof(stack));
+        update_cells(size_l, size_c, node_start, node, node->next, generation, 0);
+        task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node->next, task, generation+1);
+        free(node->next);
+    }
 
     node->next = (stack*) malloc(sizeof(stack));
     update_cells(size_l, size_c, node_start, node, node->next, generation, 1);
     task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node->next, task, generation+1);
     free(node->next);
 
-
-
-    //print_cells of the whole matrix
-    //create new node
-    //update the new node and add it to the next node if it isnt already in it
-    //
 }
 
 int main()
 {
+    clock_t start=clock();
     FILE *input_file = fopen(file_input_name, "r");
     FILE *output_file = fopen(file_output_name, "w");
 
@@ -278,5 +275,7 @@ int main()
     free(node_start);
     fclose(input_file);
     fclose(output_file);
+    clock_t stop=clock();
+    printf("ms taked: %ld\n", stop-start);
     return 0;
 }
