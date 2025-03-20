@@ -1,284 +1,282 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define file_name "D:\\vsc\\Game_Of_Life_Tasks_File.txt"         //introduceti adresa si numele fisierului (exemplu): "D:\\vsc\\Game_Of_Life_Tasks_File.txt"
+#define file_input_name "D:\\vsc\\Game_Of_Life_Tasks_File.txt"         //input file adress: "D:\\vsc\\Game_Of_Life_Tasks_File.txt"
+#define file_output_name "D:\\vsc\\Game_Of_Life_Output_File.txt"       //output file adress "D:\\vsc\\Game_Of_Life_Output_File.txt"
 
+/**
+ * struct coord - represents a cell coordinate in the grid.
+ * @l: row index.
+ * @c: column index.
+ */
 typedef struct coord{
     int l;
     int c;
 } coord;
 
-typedef struct binary_tree{
-    int depth;
-    int passes;
+/**
+ * struct stack - represents a stack node for storing changed cells on each generation
+ * @cell: pointer to an dynamic array of cell coordonates
+ * @nr_cell: number of changed cells present in the @cell array
+ * @next: pointer to the next generation's stack node
+ */
+typedef struct stack{
     coord *cell;
-    struct binary_tree *(son[2]);
-}bTree;
+    int nr_cell;
+    struct stack *next;
+} stack;
 
-void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, bTree *tree_start, int *task, char ***board)
+/**
+ * add_in_list - adds @l and @c in the node at the final value
+ * @l: line coordonate of the cell
+ * @c: column coordonate of the cell
+ * @node: pointer to the respective stack node
+ */
+void add_in_list(int l, int c, stack *node)
 {
-    fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);
-    fgetc(data_file);
+    node->cell = (coord*) realloc(node->cell, (node->nr_cell + 1) * sizeof(coord));
+    node->cell[node->nr_cell].l = l;
+    node->cell[node->nr_cell].c = c;
     
-    (*tree_start).cell= (coord*) malloc(sizeof(coord));
-    (*tree_start).depth=0;
-    int task_start=0;
-    if((*task)==3) task_start=1;
-    (*tree_start).passes=task_start;                                            //change the 0 to a 1 for task 2 so it takes the Right most direction at the start
-    (*tree_start).son[0]=NULL;
-    (*tree_start).son[1]=NULL;
-    char board_value;
-    int k=0;
-    for(int i=0; i<(*size_l); i++)
+    (node->nr_cell)++;
+    printf("X");
+}
+
+/**
+ * in_list - checks if a cell is inside a certain generation's list of cell coordonates
+ * @l: line coordonate of the cell
+ * @c: column coordonate of the cell
+ * @node: pointer to the respective stack node
+ * 
+ * returns: 1 if the list contains that cell, 0 otherwise
+ */
+int in_list(int l, int c, stack *node)
+{
+    for(int i = 0; i < node->nr_cell; i++)
+        if(node->cell[i].l == l && node->cell[i].c == c)
+            return 1;
+
+    return 0;
+}
+
+/**
+ * is_alive - checks if a certain coordonate's cell is alive or not by counting the number of changes
+ * @l: line coordonate of the cell
+ * @c: column coordonate of the cell
+ * @node: pointer to the starting stack node
+ * @generation: generation number towards to check
+ * returns: 1 if the sum is odd (cell alive), 0 otherwise;
+ */
+int is_alive(int l, int c, stack *node , int generation)
+{
+    int value = 0;
+    for(int i = 0; i <= generation && node != NULL ; i++, node = node->next)
+        value += in_list(l, c, node);
+        
+    return value % 2;
+}
+
+/**
+ * neighbou_count - counts the number of alive nrighbours of a certain cell in a certain generation
+ * @l: line coordonate of the cell
+ * @c: column coordonate of the cell
+ * @node_start: pointer to the starting stack node
+ * @generation: generation number towards to check
+ * returns: number (0-8), the number of alive neighbours
+ */
+int neighbour_count(int l, int c, int size_l, int size_c, stack *node_start, int generation)
+{
+    char neighbours[8][2] = {
+        {-1, -1}, {-1, 0}, {-1, +1},
+        { 0, -1},          { 0, +1},
+        {+1, -1}, {+1, 0}, {+1, +1}
+    };
+    int count = 0;
+
+    for(int i = 0; i < 8; i++)
     {
-        for(int j=0; j<(*size_c); j++)
-        {
-            fscanf(data_file, "%c", &board_value);
+        if(l + neighbours[i][0] < 0 || l + neighbours[i][0] == size_l || c + neighbours[i][1] < 0 || c + neighbours[i][1] == size_c)
+            continue;
+        count += is_alive(l + neighbours[i][0], c + neighbours[i][1], node_start, generation);
+    }
+
+    return count;
+}
+
+/**
+ * printf_cells - prints the current state of the board based on the @task
+ * @output_file: pointer towards the output file in which the writing will take pleace
+ * @size_l: number of lines in the grid
+ * @size_c: number of columns in the grid
+ * @node_start: pointer to the starting stack node
+ * @task: value defining the current task
+ * @generation: generation number towards to check
+ * 
+ * /if the task is 1 it prints the current board, except the generation 0 board
+ * /if the task is 2 it prints the generation and coordonates of each node in the stack
+ * if the task if 3 it prints the current board for each node, similar to task 1
+ * /if the task if 4 it doesn't anything yet, the deadline is far away :)
+ */
+void printf_cells(FILE* output_file, int size_l, int size_c, stack *node_start, int task, int generation)
+{
+    if(task == 1 || task == 3){
+        for(int i = 0; i < size_l; i++){
+            for(int j = 0; j < size_c; j++){
+                if(is_alive(i, j, node_start, generation)) {
+                    fprintf(output_file, "X");
+                } else {
+                    fprintf(output_file, "+");
+                }
+            }
+            fprintf(output_file, "\n");
+        }
+        fprintf(output_file, "\n");
+    }else if (task == 2){
+        fprintf(output_file, "%d ", generation);
+
+        for(int i = 0; i < node_start->nr_cell; i++)
+            fprintf(output_file, "%d %d ", node_start->cell[i].l, node_start->cell[i].c);
+
+        fprintf(output_file, "\n");
+    }
+    
+}
+
+/**
+ * 
+ */
+void setup(FILE* data_file, int *size_l, int *size_c, int *nr_iteratii, stack *node_start, int *task)
+{
+    fscanf(data_file,"%d%d%d%d", task, size_l, size_c, nr_iteratii);    //read data from file
+    fgetc(data_file);
+
+    node_start->cell = (coord*) malloc(sizeof(coord));
+    node_start->nr_cell = 0;
+    node_start->next = NULL;
+    
+
+    for(int i = 0; i < (*size_l); i++){
+        for(int j = 0; j < (*size_c); j++){
             
-             
-            if(board_value=='X') 
-            {
-                (*tree_start).cell[k].l=i;
-                (*tree_start).cell[k].c=j;
-                k++;
-                (*tree_start).cell= (coord*) realloc((*tree_start).cell,sizeof(coord) * (k+1));
-                //printf("%d %d\n", i, j);
-            } 
+            char board_value;
+            fscanf(data_file, "%c", &board_value);
+            if(board_value == 'X')
+                add_in_list(i, j, node_start);
+
         }
         fgetc(data_file);
     }
-    (*tree_start).cell[k].l=-1;
-    (*tree_start).cell[k].c=-1;
-
-    for(int i=0; (*tree_start).cell[i].c!=-1; i++)
-    {
-        board
-            [(*tree_start).cell[i].l]
-            [(*tree_start).cell[i].c]
-            =0b00010000;       //bit 4 is the cell state, bite 5-8 tell the number of neighbours
-        //printf("%d %d\n", (*tree_start).cell[i].l, (*tree_start).cell[i].c);
-    }
 }
-/*
-void task_cells(FILE* data_file, int size_l, int size_c, int nr_iteratii, bTree *tree_start, int task)
+
+/**
+ * 
+ */
+void update_cells(int size_l, int size_c, stack *node_start, stack *node, stack *next_node, int generation, int direction)
 {
-    bTree *tree_current=tree_start;
+    char neighbours[9][2] = {
+        {-1, -1}, {-1, 0}, {-1, +1},
+        { 0, -1}, { 0, 0}, { 0, +1},
+        {+1, -1}, {+1, 0}, {+1, +1}
+    };
     
-    int origin_passes=0, direction=1;           //direction=0 LEFT              //make this 1 for task 2
-                                                //direction=1 RIGHT
+    next_node->cell = (coord*) malloc(sizeof(coord));   
+    next_node->next = NULL;
+    next_node->nr_cell=0;
     
     
-            
-    for(int i=0; (*tree_start).cell[i].c!=-1; i++)
-    {
-        board
-            [(*tree_start).cell[i].l]
-            [(*tree_start).cell[i].c]
-            =0b00010000;       //bit 4 is the cell state, bite 5-8 tell the number of neighbours
-        //printf("%d %d\n", (*tree_start).cell[i].l, (*tree_start).cell[i].c);
-    }
-    
-    for(int i=0;i<size_l; i++)
-    {
-        for(int j=0; j<size_c; j++)
-        {
-                int top=0, left=0, bottom=0, right=0, nr_neighbours=0;
-                if(i-1>=0) top=1;
-                if(j-1>=0) left=1;
-                if(i+1<size_l) bottom=1;
-                if(j+1<size_c) right=1;
+    for(int i = 0; i < node->nr_cell; i++){
 
-            if(left && top)
-                nr_neighbours+=(board[i-1][j-1]>>4);
-                
-            if(top)
-                nr_neighbours+=(board[i-1][j+0]>>4);
-
-            if(top && right)
-                nr_neighbours+=(board[i-1][j+1]>>4);
-
-            if(left)
-                nr_neighbours+=(board[i+0][j-1]>>4);
-
-            if(right)
-                nr_neighbours+=(board[i+0][j+1]>>4);
-
-            if(left && bottom)
-                nr_neighbours+=(board[i+1][j-1]>>4);
-
-            if(bottom)
-                nr_neighbours+=(board[i+1][j+0]>>4);
-
-            if(bottom && right)
-                nr_neighbours+=(board[i+1][j+1]>>4);
-            
-            board[i][j]+=nr_neighbours;
-        }
-    }
-    int aux=0;
-    //printf("nod   dir   nod\n");    //nod_start, direction, new_node;   0 left, 1 right
-    while(origin_passes <3)        
-    {                                                                               //nr of pases <2 do in the node or terminal node, else leave
-        int add=0;
-        aux++;
-        //printf("%d     ", (*tree_current).depth);
-        if((*tree_current).father==NULL) origin_passes++;
-        int last_direction=direction;
-
-        if((*tree_current).depth<nr_iteratii && (*tree_current).passes<2)
-        {
-            direction=(*tree_current).passes;
-            //printf("%d     ", direction);
-            (*tree_current).son[direction] = (bTree*) malloc(sizeof(bTree));    
-            ((*tree_current).passes)+=1;                                            
-            (*((*tree_current).son[direction])).father=tree_current;                //tree branch swapping, dont change, it took 2 hours for me to implement this logic 
-            tree_current=(*tree_current).son[direction];                            
-            (*tree_current).passes=1;                                               //for task 2 change the 0 to a 1 so it takes the Right most direction (normal rules)
-            (*tree_current).depth=(*((*tree_current).father)).depth+1;
-            (*tree_current).cell= (coord*) malloc(sizeof(coord));
-            add=1;
-        }
-        else
-        {
-            //printf("      ");
-            tree_current=(*tree_current).father;
-            free((*tree_current).son[direction]);           //dont rewrite this, it works beautifully
-            (*tree_current).son[direction]=NULL;            //i want to free the value after reaching its end/ all paths after it
-        }
-
-        //printf("%d \n", (*tree_current).depth);
         
-        
-         for(int i=0; i<size_l; i++)
+
+        for(int j = 0; j < 9; j++)
         {
-            for(int j=0; j<size_c; j++)
-                printf("%d ", (board[i][j] & 0b00001111));
+            int nl = node->cell[i].l + neighbours[j][0];
+            int nc = node->cell[i].c + neighbours[j][1];
+
+            if(nl < 0 || nl  == size_l || nc  < 0 || nc  == size_c)
+                continue;
+
+            int n_count = neighbour_count(nl, nc, size_l, size_c, node_start, generation);
+            int i_alive = is_alive(nl, nc, node_start, generation);
             
-            printf("    ");
+            if(in_list(nl, nc, next_node) == 1)
+                continue;
 
-            for(int j=0; j<size_c; j++)
-                printf("%d ", ((board[i][j] & 0b00010000) >> 4));
+            printf("%d %d %d %d ", nl, nc, n_count, i_alive);
 
-            printf("\n");
-        } 
+            if(direction == 0) {
+                if(n_count == 2 && i_alive == 0)
+                    add_in_list(nl, nc, next_node);
 
-        int k=0;
-
-        if(add==1)
-        {
-            for(int i=0; i<size_l; i++)
-            {
-                for(int j=0; j<size_c; j++)
-                {
-                    int top=0, left=0, bottom=0, right=0, state;
-                    if(i-1>=0) top=1;
-                    if(j-1>=0) left=1;
-                    if(i+1<size_l) bottom=1;
-                    if(j+1<size_c) right=1;
-
-
-                     if(last_direction==0)
-                    {
-
-                    }
-                    else  
-                    if(last_direction==1)
-                    {
-                        if( (board[i][j] & 0b00010000) >> 4 == 1 && ( (board[i][j] & 0b00001111) < 2 ||  (board[i][j] & 0b00001111) > 3) )    //daca are 0,1,4,5,6,7,8 vecini si celula este vie, atunci ea moare
-                        {
-                            printf("%d %d\n", i, j);
-                            (*tree_current).cell[k].l=i;
-                            (*tree_current).cell[k].c=j;
-                            k++;
-                            (*tree_current).cell = (coord*) realloc((*tree_current).cell, (k+1)*sizeof(coord));
-
-                            state=-1; //new dead cell
-
-                            //board[i][j]-=0b00010000; //cell type dead
-                            
-                            // add the changes in the tree.cell then update the board based on the values
-                            // this will be the only one in this loop, the rest will be after based on a condition if a node was added or removed
-                            // the removal shall be done before deleting the node so the added values can still be used to change the board to the previous node's configuration
-                            
-                            // if i go down, add the values to the board
-                            // if i go up, remove the values from the board, the board will resemble the node's board
-                                                    
-                        }
-                        else if( (board[i][j] & 0b00001111) == 3 && (board[i][j] & 0b00010000) >> 4 == 0)  //daca celula are 3 vecici si celula este moarta, atunci ea invie
-                        {
-                            (*tree_current).cell[k].l=i;
-                            (*tree_current).cell[k].c=j;
-                            k++;
-                            (*tree_current).cell = (coord*) realloc((*tree_current).cell, (k+1)*sizeof(coord));
-
-                            state=1; //new alive cell
-                        }
-                    }
-                    if(top && left)
-                        board[i-1][j-1]+=state;
-                    if(top)
-                        board[i-1][j+0]+=state;
-
-                    if(top && right)
-                        board[i-1][j+1]+=state;
-
-                    if(left)
-                        board[i+0][j-1]+=state;
-
-                    if(right)
-                        board[i+0][j+1]+=state;
-
-                    if(bottom && left)
-                        board[i+1][j-1]+=state;
-
-                    if(bottom)
-                        board[i+1][j+0]+=state;
-
-                    if(bottom && right)
-                        board[i+1][j+1]+=state;
+            } else if(direction == 1) {
+                if(i_alive == 1 && (n_count < 2 || n_count > 3)) {
+                    add_in_list(nl, nc, next_node);
+                } else if(i_alive == 0 && n_count == 3) {
+                    add_in_list(nl, nc, next_node);
                 }
             }
-            (*tree_current).cell[k].l=-1;
-            (*tree_current).cell[k].c=-1;
+            printf("\n");
         }
-
-        //for(int i=0; i<k; i++)
-        //    printf("%d %d\n", (*tree_current).cell[i].l, (*tree_current).cell[i].c);
-        
-         for(int i=0; i<size_l; i++)
-        {
-            for(int j=0; j<size_c; j++)
-            {
-                printf(board[i][j]>>4*('X' - '+')+'+');
-            }
-        } 
-
     }
-    
-    for(int i=0;i<size_l; i++)
-        free(board[i]);
-    free(board);
 }
-*/
+
+/**
+ * 
+ */
+void task_cells(FILE* output_file, int size_l, int size_c, int nr_iteratii, stack *node_start, stack *node, int task, int generation)
+{
+    printf_cells(output_file, size_l, size_c, node_start, task, generation);
+    
+    if(generation == nr_iteratii)
+        return ;
+
+    
+    node->next = (stack*) malloc(sizeof(stack));
+    update_cells(size_l, size_c, node_start, node, node->next, generation, 0);
+    task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node->next, task, generation+1);
+    free(node->next);
+
+
+    node->next = (stack*) malloc(sizeof(stack));
+    update_cells(size_l, size_c, node_start, node, node->next, generation, 1);
+    task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node->next, task, generation+1);
+    free(node->next);
+
+
+
+    //print_cells of the whole matrix
+    //create new node
+    //update the new node and add it to the next node if it isnt already in it
+    //
+}
+
 int main()
 {
-    FILE *data_file=fopen(file_name,"r");
+    FILE *input_file = fopen(file_input_name, "r");
+    FILE *output_file = fopen(file_output_name, "w");
 
-    if(data_file==NULL){
+    if(input_file == NULL || output_file == NULL) {
+        
         printf("File could not open");
+
+        if(input_file == NULL) {
+            fclose(output_file);
+        } else if (output_file == NULL) {
+            fclose(input_file);
+        }
+
         return 1;
     }
 
-    bTree tree_start;
+    int task, size_l, size_c, nr_iteratii, generation = 0;
 
-    int task, size_l, size_c, nr_iteratii;
-    char **board;
+    stack *node_start = (stack*) malloc(sizeof(stack));
 
-    setup(data_file, &size_l, &size_c, &nr_iteratii, &tree_start, &task, &board);
+    setup(input_file, &size_l, &size_c, &nr_iteratii, node_start, &task);
 
-    
+    task_cells(output_file, size_l, size_c, nr_iteratii, node_start, node_start, task, generation);
 
-    task_cells(data_file, size_l, size_c, nr_iteratii, &tree_start, task, board);
-    
-    fclose(data_file);
+    free(node_start);
+    fclose(input_file);
+    fclose(output_file);
     return 0;
 }
